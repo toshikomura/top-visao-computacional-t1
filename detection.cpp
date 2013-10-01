@@ -28,8 +28,8 @@ int main( int argc, char** argv )
   int row2 = s2.height;
   int colum2 = s2.width;
 
-  printf ( "First image %d\n", row1*colum1);
-  printf ( "Second image %d\n", row2*colum2);
+  printf ( "First image size %d channels %d\n", row1*colum1, img_1.channels());
+  printf ( "Second image size %d channels %d\n", row2*colum2, img_2.channels());
 
   //-- Step 1: Detect the keypoints using SURF Detector
   int minHessian = 400;
