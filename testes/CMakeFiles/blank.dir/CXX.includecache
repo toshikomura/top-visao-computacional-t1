@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/bcc/gtk10/Documentos/TRABALHOS/VISAO_COMPUTACIONAL/blank.cpp
+stdafx.h
+/home/bcc/gtk10/Documentos/TRABALHOS/VISAO_COMPUTACIONAL/stdafx.h
+cv.h
+-
+highgui.h
+-
+

@@ -1,0 +1,2 @@
+/home/bcc/gtk10/Documentos/TRABALHOS/VISAO_COMPUTACIONAL/CMakeFiles/DisplayImage.dir
+/home/bcc/gtk10/Documentos/TRABALHOS/VISAO_COMPUTACIONAL/CMakeFiles/blank.dir
