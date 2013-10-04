@@ -15,38 +15,34 @@ int main( int argc, char** argv )
   if( argc != 2 )
   { readme(); return -1; }
 
-  Mat img_1 = imread( argv[ 1], CV_LOAD_IMAGE_GRAYSCALE );
+  Mat imput_img = imread( argv[ 1], CV_LOAD_IMAGE_GRAYSCALE );
   Mat warp_rotate_dst, rot_mat;
   Mat equalize_img;
+  Mat img_matches;
 
-  Size s1 = img_1.size();
+  Size s = imput_img.size();
 
-  int row1 = s1.height;
-  int colum1 = s1.width;
+  int row = s.height;
+  int colum = s.width;
 
   Mat mask;
-  equalizeHist( img_1, mask);
+  equalizeHist( imput_img, mask);
 
   int i, j;
 
-  for ( i = 0; i < row1*colum1; i++)
+  for ( i = 0; i < row * colum; i++)
       mask.data[i] = 0;
 
-  for ( i = (row1*colum1)/3 + 5800; i < (row1*colum1)/2 + 20; i++)
-    mask.data[i] = 10;
+  for ( i = (row * colum)/2 - (row * colum)/200; i < (row *colum )/2 + (row * colum)/200; i++)
+    mask.data[i] = 1;
 
-  printf ( "First image size %d %d %d channels %d\n", row1, colum1, row1*colum1, img_1.channels());
+  printf ( "Imput image size %d %d %d channels %d\n", row, colum, row *colum, imput_img.channels());
 
   /// Apply Histogram Equalization
-  equalizeHist( img_1, equalize_img);
-
-  Size s2 = equalize_img.size();
-
-  int row2 = s2.height;
-  int colum2 = s2.width;
+  equalizeHist( imput_img, equalize_img);
 
   /// Compute a rotation matrix with respect to the center of the image
-  Point center = Point( row2/2, colum2/2 );
+  Point center = Point( row/2, colum/2 );
   double angle = 45.0;
   double scale = 1.0;
 
@@ -54,58 +50,59 @@ int main( int argc, char** argv )
   rot_mat = getRotationMatrix2D( center, angle, scale );
 
   /// Rotate the warped image
-  warpAffine( equalize_img, warp_rotate_dst, rot_mat, img_1.size() );
-
-  Size s3 = warp_rotate_dst.size();
-
-  int row3 = s3.height;
-  int colum3 = s3.width;
-
-  printf ( "row %d colum %d\n", row3, colum3);
+  warpAffine( equalize_img, warp_rotate_dst, rot_mat, imput_img.size() );
 
   //-- Step 1: Detect the keypoints using SURF Detector
-
+  printf ( "Prepar Surf\n");
   SurfFeatureDetector detector( 400, 3, 2, false);
 
-  std::vector<KeyPoint> keypoints_1, keypoints_2, keypoints_3;
+  std::vector<KeyPoint> keypoints_imput, keypoints_equalize, keypoints_rotate;
 
-  detector.detect( img_1, keypoints_1, mask);
-  detector.detect( warp_rotate_dst, keypoints_2, mask);
-  detector.detect( equalize_img, keypoints_3, mask);
+  printf ( "Detect points\n");
+  detector.detect( imput_img, keypoints_imput, mask);
+  detector.detect( warp_rotate_dst, keypoints_equalize, mask);
+  detector.detect( equalize_img, keypoints_rotate, mask);
 
   // computing descriptors
+  printf ( "Computiong descriptors\n");
   SurfDescriptorExtractor extractor;
   Mat descriptors1, descriptors2, descriptors3;
-  extractor.compute( img_1, keypoints_1, descriptors1);
-  extractor.compute( equalize_img, keypoints_2, descriptors2);
-  extractor.compute( warp_rotate_dst, keypoints_3, descriptors3);
+  extractor.compute( imput_img, keypoints_imput, descriptors1);
+  extractor.compute( equalize_img, keypoints_equalize, descriptors2);
+  extractor.compute( warp_rotate_dst, keypoints_rotate, descriptors3);
 
   // matching descriptors
+  printf ( "Matching descriptors\n");
   BruteForceMatcher<L2<float> > matcher;
   vector<DMatch> matches;
   matcher.match( descriptors1, descriptors2, matches);
 
   // drawing the results
-  namedWindow( "matches", 1);
-  Mat img_matches;
-  drawMatches( img_1, keypoints_1, equalize_img, keypoints_2, matches, img_matches);
-  imshow( "matches1_equalize", img_matches);
+  //namedWindow( "matches", 1);
+  drawMatches( imput_img, keypoints_imput, equalize_img, keypoints_equalize, matches, img_matches);
+  //imshow( "matches1_equalize", img_matches);
+  imwrite( "matches1_equalize.jpg", img_matches);
 
   matcher.match( descriptors1, descriptors3, matches);
-  drawMatches( img_1, keypoints_1, warp_rotate_dst, keypoints_3, matches, img_matches);
-  imshow( "matches1_rotate", img_matches);
+  drawMatches( imput_img, keypoints_imput, warp_rotate_dst, keypoints_rotate, matches, img_matches);
+  //imshow( "matches1_rotate", img_matches);
+  imwrite( "matches1_rotate.jpg", img_matches);
 
   //-- Draw keypoints
-  Mat img_keypoints_1, img_keypoints_2, img_keypoints_3;
+  Mat keypoints_imput_img, keypoints_equalize_img, keypoints_rotate_img;
 
-  drawKeypoints( img_1, keypoints_1, img_keypoints_1, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
-  drawKeypoints( warp_rotate_dst, keypoints_2, img_keypoints_2, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
-  drawKeypoints( equalize_img, keypoints_3, img_keypoints_3, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
+  drawKeypoints( imput_img, keypoints_imput, keypoints_imput_img, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
+  drawKeypoints( warp_rotate_dst, keypoints_equalize, keypoints_equalize_img, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
+  drawKeypoints( equalize_img, keypoints_rotate, keypoints_rotate_img, Scalar::all(-1), DrawMatchesFlags::DEFAULT );
 
   //-- Show detected (drawn) keypoints
-  imshow( "Keypoints 1", img_keypoints_1 );
-  imshow( "2", img_keypoints_2);
-  imshow( "3", img_keypoints_3);
+  //imshow( "keypoints_imput_img.jpg", keypoints_imput_img );
+  //imshow( "keypoints_equalize_img.jpg", keypoints_equalize_img);
+  //imshow( "keypoints_rotate_img.jpg", keypoints_rotate_img);
+
+  imwrite( "keypoints_imput_img.jpg", keypoints_imput_img);
+  imwrite( "keypoints_equalize_img.jpg", keypoints_equalize_img);
+  imwrite( "keypoints_rotate_img.jpg", keypoints_rotate_img);
 
   waitKey( 0);
 
